@@ -1,0 +1,5 @@
+{
+  "reason_language_server.per_value_codelens": true,
+  "reason_language_server.show_debug_errors": true,
+  "reason_language_server.useOldDuneProcess": false
+}
