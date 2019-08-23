@@ -7,16 +7,14 @@ function Make(Messages) {
   var publish = function (exchange, obj, options) {
     return exchange.publish(Curry._1(Messages[/* publisherMsgToValidJson */0], obj), options);
   };
-  var consumer = function (queue) {
-    return /* Task */[(function (param, res) {
-                queue.consume((function (obj, acc) {
-                        return Curry._1(res, /* tuple */[
-                                    Curry._1(Messages[/* publisherMsgFromValidJson */1], obj),
-                                    acc
-                                  ]);
-                      }));
-                return /* NoCancel */0;
-              })];
+  var consumer = function (queue, cb, options) {
+    queue.consume((function (obj, acc) {
+            return Curry._1(cb, /* tuple */[
+                        Curry._1(Messages[/* publisherMsgFromValidJson */1], obj),
+                        acc
+                      ]);
+          }), options);
+    return /* () */0;
   };
   var Queue = /* module */[/* consumer */consumer];
   return /* module */[

@@ -1,5 +1,3 @@
-open Task;
-
 module Make = (Messages: Messages.S) => {
   type exchangeT;
   //  name: name,
@@ -15,11 +13,18 @@ module Make = (Messages: Messages.S) => {
   //     consume: consume,
   //     cancel: cancel,
   //     purge: purge
+  type exchangeOptions;
 
-  [@bs.send] external topic : (Connection.rabbitT, string) => exchangeT = "topic";
+  [@bs.obj]
+  external makeExchangeOptions: (
+    ~durable: bool=?,
+    unit
+  ) => exchangeOptions = "";
+
+  [@bs.send] external topic : (Connection.rabbitT, string, exchangeOptions) => exchangeT = "topic";
 
   type publishOptions;
-
+  [@bs.obj]
   external makePublishOptions :
   (
     ~key: string=?,
@@ -47,12 +52,22 @@ module Make = (Messages: Messages.S) => {
   [@bs.send] external createQueue : (exchangeT, queueOptions) => queueT = "queue";
 
   module Queue = {
-    [@bs.send] external _consume : (queueT, ('a, option(string) => unit) => unit) => unit = "consume";
+    type consumeOptions;
+    [@bs.obj]
+    external makeConsumeOptions:
+      (
+        ~noAck: bool=?,
+        ~exclusive: bool=?,
+        unit
+      ) =>
+      consumeOptions =
+      "";
+    [@bs.send] external _consume : (queueT, ('a, option(string) => unit) => unit, consumeOptions) => unit = "consume";
     // Todo make this cancelable
-    let consumer = queue => Task((_, res) => {
-      let tomsg: 'a => Messages.publisherMsg = (obj) => Messages.publisherMsgFromValidJson(obj);
-      _consume(queue, (obj, acc) => res((tomsg(obj), acc)))
-      NoCancel;
-    })
+    let consumer = queue => (cb, options) => {
+      let tomsg: 'a => Messages.publisherMsg =
+        obj => Messages.publisherMsgFromValidJson(obj);
+      _consume(queue, (obj, acc) => cb((tomsg(obj), acc)), options);
+    }
   }
 }
